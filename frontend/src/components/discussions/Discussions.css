@@ -1,0 +1,322 @@
+.discussions-page {
+  padding: 2rem 0;
+}
+
+.discussions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.discussions-header h1 {
+  font-family: var(--font-heading);
+  margin-bottom: 0.25rem;
+}
+
+.discussions-header p {
+  color: var(--text-secondary);
+}
+
+/* Discussion Form */
+.discussion-form {
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Discussion List */
+.discussions-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.discussion-card {
+  display: block;
+  padding: 1.25rem;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.discussion-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.discussion-card-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.discussion-user {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.discussion-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.discussion-avatar.small {
+  width: 28px;
+  height: 28px;
+}
+
+.discussion-avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.discussion-avatar-placeholder.small {
+  width: 28px;
+  height: 28px;
+  font-size: 0.8rem;
+}
+
+.discussion-user strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.discussion-date {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.discussion-title {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  margin-bottom: 0.5rem;
+}
+
+.discussion-excerpt {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.discussion-meta {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  align-items: center;
+}
+
+.discussion-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.discussion-tags {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.tag {
+  background: var(--bg-secondary);
+  color: var(--primary);
+  padding: 0.2rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* Discussion Detail */
+.discussion-detail {
+  padding: 2rem 0;
+}
+
+.discussion-detail-card {
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.discussion-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.discussion-detail-title {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+}
+
+.discussion-detail-content {
+  line-height: 1.8;
+  white-space: pre-wrap;
+  margin-bottom: 1.25rem;
+}
+
+.discussion-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.like-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--border);
+  background: none;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.like-btn.small {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+.like-btn:hover,
+.like-btn.liked {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Replies */
+.replies-section {
+  margin-top: 1.5rem;
+}
+
+.replies-section h2 {
+  font-family: var(--font-heading);
+  margin-bottom: 1rem;
+}
+
+.reply-form {
+  margin-bottom: 1.5rem;
+}
+
+.reply-card {
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.reply-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.reply-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.reply-content {
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--text-secondary);
+}
+
+.empty-state svg {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+/* Discussion Edit Form */
+.discussion-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.discussion-edit-form input,
+.discussion-edit-form textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.discussion-edit-form input:focus,
+.discussion-edit-form textarea:focus {
+  outline: none;
+  border-color: var(--primary, #6c5ce7);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+}
+
+.discussion-edit-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.discussion-edit-form .edit-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.discussion-edit-form .edit-actions button {
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.discussion-edit-form .edit-actions button:first-child {
+  background: var(--primary, #6c5ce7);
+  color: #fff;
+}
+
+.discussion-edit-form .edit-actions button:first-child:hover {
+  opacity: 0.9;
+}
+
+.discussion-edit-form .edit-actions button:last-child {
+  background: #eee;
+  color: #555;
+}
+
+.discussion-edit-form .edit-actions button:last-child:hover {
+  background: #ddd;
+}
+
+@media (max-width: 600px) {
+  .discussions-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .discussion-detail-card {
+    padding: 1.25rem;
+  }
+}

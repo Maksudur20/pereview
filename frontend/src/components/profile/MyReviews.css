@@ -1,0 +1,107 @@
+.my-reviews-page {
+  padding: 2rem 0;
+}
+
+.my-reviews-page h1 {
+  font-family: var(--font-heading);
+  margin-bottom: 0.25rem;
+}
+
+.my-reviews-subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.my-reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.my-review-card {
+  padding: 1.5rem;
+}
+
+.my-review-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.my-review-perfume {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+}
+
+.my-review-perfume:hover h3 {
+  color: var(--primary);
+}
+
+.my-review-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.my-review-perfume h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: color 0.2s;
+}
+
+.my-review-brand {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.my-review-ratings {
+  margin-bottom: 0.75rem;
+}
+
+.my-review-rating-main {
+  margin-bottom: 0.35rem;
+}
+
+.my-review-sub-ratings {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.my-review-comment {
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+.my-review-date {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--text-secondary);
+}
+
+.empty-state .btn {
+  margin-top: 1rem;
+}
+
+@media (max-width: 600px) {
+  .my-review-card {
+    padding: 1rem;
+  }
+  .my-review-sub-ratings {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+}
