@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const { OAuth2Client } = require('google-auth-library');
+const https = require('https');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -81,15 +82,50 @@ const login = async (req, res, next) => {
 // @route   POST /api/auth/google
 const googleAuth = async (req, res, next) => {
   try {
-    const { credential } = req.body;
+    const { credential, accessToken } = req.body;
+    let googleId, email, name, picture;
 
-    const ticket = await googleClient.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+    if (accessToken) {
+      // OAuth 2.0 access token flow (useGoogleLogin)
+      const userInfo = await new Promise((resolve, reject) => {
+        https.get(
+          `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`,
+          (response) => {
+            let data = '';
+            response.on('data', (chunk) => (data += chunk));
+            response.on('end', () => {
+              try {
+                resolve(JSON.parse(data));
+              } catch (e) {
+                reject(new Error('Failed to parse Google user info'));
+              }
+            });
+          }
+        ).on('error', reject);
+      });
 
-    const payload = ticket.getPayload();
-    const { sub: googleId, email, name, picture } = payload;
+      if (!userInfo.sub || !userInfo.email) {
+        return res.status(401).json({ message: 'Invalid Google access token' });
+      }
+
+      googleId = userInfo.sub;
+      email = userInfo.email;
+      name = userInfo.name || email.split('@')[0];
+      picture = userInfo.picture || '';
+    } else if (credential) {
+      // ID token flow (GoogleLogin component - legacy)
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      googleId = payload.sub;
+      email = payload.email;
+      name = payload.name;
+      picture = payload.picture;
+    } else {
+      return res.status(400).json({ message: 'No Google credential provided' });
+    }
 
     let user = await User.findOne({ $or: [{ googleId }, { email }] });
 

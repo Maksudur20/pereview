@@ -70,6 +70,28 @@
   justify-content: center;
 }
 
+.google-signin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  background: #fff;
+  color: #3c4043;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.google-signin-btn:hover {
+  background: #f7f8f8;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
 .auth-footer {
   text-align: center;
   margin-top: 24px;
