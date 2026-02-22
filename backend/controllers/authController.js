@@ -3,7 +3,11 @@ const generateToken = require('../utils/generateToken');
 const { OAuth2Client } = require('google-auth-library');
 const https = require('https');
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const FRONTEND_URL = process.env.CLIENT_URL || 'http://localhost:3000';
+
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
 
 // @desc    Register user with email/password
 // @route   POST /api/auth/register
@@ -78,7 +82,79 @@ const login = async (req, res, next) => {
   }
 };
 
-// @desc    Google OAuth login/register
+// @desc    Redirect user to Google OAuth consent screen
+// @route   GET /api/auth/google/redirect
+const googleRedirect = (req, res) => {
+  const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
+  const url = googleClient.generateAuthUrl({
+    access_type: 'offline',
+    scope: ['openid', 'email', 'profile'],
+    redirect_uri: redirectUri,
+    prompt: 'select_account',
+  });
+  res.redirect(url);
+};
+
+// @desc    Handle Google OAuth callback (authorization code exchange)
+// @route   GET /api/auth/google/callback
+const googleCallback = async (req, res) => {
+  try {
+    const { code } = req.query;
+    if (!code) {
+      return res.redirect(`${FRONTEND_URL}/login?error=no_code`);
+    }
+
+    const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
+    const { tokens } = await googleClient.getToken({ code, redirect_uri: redirectUri });
+    
+    // Get user info from the ID token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    const googleId = payload.sub;
+    const email = payload.email;
+    const name = payload.name || email.split('@')[0];
+    const picture = payload.picture || '';
+
+    let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+    if (user) {
+      if (!user.googleId) {
+        user.googleId = googleId;
+        user.avatar = picture || user.avatar;
+        await user.save();
+      }
+    } else {
+      user = await User.create({
+        name,
+        email,
+        googleId,
+        avatar: picture || '',
+      });
+    }
+
+    const token = generateToken(user._id);
+    
+    // Redirect to frontend with token and user data
+    const userData = encodeURIComponent(JSON.stringify({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar,
+    }));
+    
+    res.redirect(`${FRONTEND_URL}/auth/google/callback?token=${token}&user=${userData}`);
+  } catch (error) {
+    console.error('Google OAuth callback error:', error);
+    res.redirect(`${FRONTEND_URL}/login?error=google_auth_failed`);
+  }
+};
+
+// @desc    Google OAuth login/register (legacy POST endpoint)
 // @route   POST /api/auth/google
 const googleAuth = async (req, res, next) => {
   try {
@@ -215,4 +291,4 @@ const toggleFavorite = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, googleAuth, getMe, updateProfile, toggleFavorite };
+module.exports = { register, login, googleAuth, googleRedirect, googleCallback, getMe, updateProfile, toggleFavorite };

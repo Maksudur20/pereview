@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { googleLogin } from '../../services/perfumeService';
 import { toast } from 'react-toastify';
 import './Auth.css';
 
@@ -9,29 +8,34 @@ const GoogleCallback = () => {
   const [processing, setProcessing] = useState(true);
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    const handleCallback = async () => {
-      // Extract access_token from URL hash fragment
-      const hash = location.hash.substring(1);
-      const params = new URLSearchParams(hash);
-      const accessToken = params.get('access_token');
-
-      if (!accessToken) {
-        toast.error('Google login failed - no token received');
-        navigate('/login');
-        return;
-      }
-
+    const handleCallback = () => {
       try {
-        const { data } = await googleLogin(accessToken);
-        login(data.token, data.user);
+        const token = searchParams.get('token');
+        const userParam = searchParams.get('user');
+        const error = searchParams.get('error');
+
+        if (error) {
+          toast.error('Google login failed. Please try again.');
+          navigate('/login');
+          return;
+        }
+
+        if (!token || !userParam) {
+          toast.error('Google login failed - no token received');
+          navigate('/login');
+          return;
+        }
+
+        const user = JSON.parse(decodeURIComponent(userParam));
+        login(token, user);
         toast.success('Login successful!');
         navigate('/');
       } catch (error) {
         console.error('Google auth error:', error);
-        toast.error(error.response?.data?.message || 'Google login failed');
+        toast.error('Google login failed');
         navigate('/login');
       } finally {
         setProcessing(false);
@@ -39,7 +43,7 @@ const GoogleCallback = () => {
     };
 
     handleCallback();
-  }, [location, login, navigate]);
+  }, [searchParams, login, navigate]);
 
   if (processing) {
     return (
