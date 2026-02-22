@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { registerUser } from '../../services/perfumeService';
 import { toast } from 'react-toastify';
 import { getGoogleOAuthUrl } from '../../services/googleAuth';
@@ -12,7 +11,6 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -30,9 +28,16 @@ const Register = () => {
 
     try {
       const { data } = await registerUser({ name, email, password });
-      login(data.token, data.user);
-      toast.success('Account created successfully!');
-      navigate('/');
+
+      if (data.needsVerification) {
+        toast.success('Verification code sent to your email!');
+        navigate('/verify', { state: { email: data.email, type: 'verification' } });
+        return;
+      }
+
+      // Fallback (shouldn't happen)
+      toast.success('Account created!');
+      navigate('/login');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed');
     } finally {

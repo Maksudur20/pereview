@@ -2,6 +2,8 @@ const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const { OAuth2Client } = require('google-auth-library');
 const https = require('https');
+const crypto = require('crypto');
+const { sendVerificationEmail, sendLoginCodeEmail, sendPasswordResetEmail } = require('../utils/sendEmail');
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -9,7 +11,7 @@ const FRONTEND_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
 
-// @desc    Register user with email/password
+// @desc    Register user with email/password (sends verification code)
 // @route   POST /api/auth/register
 const register = async (req, res, next) => {
   try {
@@ -20,14 +22,67 @@ const register = async (req, res, next) => {
     }
 
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    if (existingUser && existingUser.isVerified) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    const user = await User.create({ name, email, password });
-    const token = generateToken(user._id);
+    let user;
+    if (existingUser && !existingUser.isVerified) {
+      // Update the unverified user with new details
+      existingUser.name = name;
+      existingUser.password = password;
+      user = existingUser;
+    } else {
+      user = new User({ name, email, password });
+    }
+
+    // Generate verification code and send email
+    const code = user.generateVerificationCode();
+    await user.save();
+
+    await sendVerificationEmail(email, name, code);
 
     res.status(201).json({
+      success: true,
+      needsVerification: true,
+      email: user.email,
+      message: 'Verification code sent to your email',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Verify email with code (after registration)
+// @route   POST /api/auth/verify-email
+const verifyEmail = async (req, res, next) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res.status(400).json({ message: 'Please provide email and verification code' });
+    }
+
+    const hashedCode = crypto.createHash('sha256').update(code).digest('hex');
+
+    const user = await User.findOne({
+      email,
+      verificationCode: hashedCode,
+      verificationCodeExpires: { $gt: Date.now() },
+    }).select('+verificationCode +verificationCodeExpires');
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired verification code' });
+    }
+
+    user.isVerified = true;
+    user.verificationCode = undefined;
+    user.verificationCodeExpires = undefined;
+    await user.save();
+
+    const token = generateToken(user._id);
+
+    res.json({
       success: true,
       token,
       user: {
@@ -43,7 +98,38 @@ const register = async (req, res, next) => {
   }
 };
 
-// @desc    Login user with email/password
+// @desc    Resend verification or login code
+// @route   POST /api/auth/resend-code
+const resendCode = async (req, res, next) => {
+  try {
+    const { email, type } = req.body; // type: 'verification' or 'login'
+
+    if (!email) {
+      return res.status(400).json({ message: 'Please provide email' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (type === 'login') {
+      const code = user.generateLoginCode();
+      await user.save();
+      await sendLoginCodeEmail(email, user.name, code);
+    } else {
+      const code = user.generateVerificationCode();
+      await user.save();
+      await sendVerificationEmail(email, user.name, code);
+    }
+
+    res.json({ success: true, message: 'Code resent successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Login user with email/password (sends login code)
 // @route   POST /api/auth/login
 const login = async (req, res, next) => {
   try {
@@ -64,6 +150,61 @@ const login = async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    if (!user.isVerified) {
+      // Resend verification code
+      const code = user.generateVerificationCode();
+      await user.save();
+      await sendVerificationEmail(email, user.name, code);
+      return res.status(403).json({
+        success: false,
+        needsVerification: true,
+        email: user.email,
+        message: 'Please verify your email first. Verification code sent.',
+      });
+    }
+
+    // Send login verification code
+    const code = user.generateLoginCode();
+    await user.save();
+    await sendLoginCodeEmail(email, user.name, code);
+
+    res.json({
+      success: true,
+      needsLoginCode: true,
+      email: user.email,
+      message: 'Login code sent to your email',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Verify login code (2FA)
+// @route   POST /api/auth/verify-login
+const verifyLogin = async (req, res, next) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res.status(400).json({ message: 'Please provide email and login code' });
+    }
+
+    const hashedCode = crypto.createHash('sha256').update(code).digest('hex');
+
+    const user = await User.findOne({
+      email,
+      loginCode: hashedCode,
+      loginCodeExpires: { $gt: Date.now() },
+    }).select('+loginCode +loginCodeExpires');
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired login code' });
+    }
+
+    user.loginCode = undefined;
+    user.loginCodeExpires = undefined;
+    await user.save();
+
     const token = generateToken(user._id);
 
     res.json({
@@ -77,6 +218,73 @@ const login = async (req, res, next) => {
         avatar: user.avatar,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Forgot password - send reset email
+// @route   POST /api/auth/forgot-password
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Please provide your email' });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      // Don't reveal if user exists
+      return res.json({ success: true, message: 'If that email exists, a reset link has been sent' });
+    }
+
+    const resetToken = user.generateResetToken();
+    await user.save();
+
+    const resetUrl = `${FRONTEND_URL}/reset-password/${resetToken}`;
+    await sendPasswordResetEmail(email, user.name, resetUrl);
+
+    res.json({ success: true, message: 'Password reset link sent to your email' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Reset password with token
+// @route   POST /api/auth/reset-password/:token
+const resetPassword = async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    const { token } = req.params;
+
+    if (!password) {
+      return res.status(400).json({ message: 'Please provide a new password' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    }).select('+resetPasswordToken +resetPasswordExpires');
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    user.isVerified = true; // Auto-verify since they confirmed email
+    await user.save();
+
+    res.json({ success: true, message: 'Password reset successful. You can now log in.' });
   } catch (error) {
     next(error);
   }
@@ -125,14 +333,16 @@ const googleCallback = async (req, res) => {
       if (!user.googleId) {
         user.googleId = googleId;
         user.avatar = picture || user.avatar;
-        await user.save();
       }
+      if (!user.isVerified) user.isVerified = true;
+      await user.save();
     } else {
       user = await User.create({
         name,
         email,
         googleId,
         avatar: picture || '',
+        isVerified: true,
       });
     }
 
@@ -210,14 +420,16 @@ const googleAuth = async (req, res, next) => {
       if (!user.googleId) {
         user.googleId = googleId;
         user.avatar = picture || user.avatar;
-        await user.save();
       }
+      if (!user.isVerified) user.isVerified = true;
+      await user.save();
     } else {
       user = await User.create({
         name,
         email,
         googleId,
         avatar: picture || '',
+        isVerified: true,
       });
     }
 
@@ -291,4 +503,4 @@ const toggleFavorite = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, googleAuth, googleRedirect, googleCallback, getMe, updateProfile, toggleFavorite };
+module.exports = { register, login, verifyEmail, verifyLogin, resendCode, forgotPassword, resetPassword, googleAuth, googleRedirect, googleCallback, getMe, updateProfile, toggleFavorite };

@@ -8,6 +8,9 @@ import Footer from './components/layout/Footer';
 import Home from './components/home/Home';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
+import VerifyCode from './components/auth/VerifyCode';
+import ForgotPassword from './components/auth/ForgotPassword';
+import ResetPassword from './components/auth/ResetPassword';
 import GoogleCallback from './components/auth/GoogleCallback';
 import PerfumeList from './components/perfumes/PerfumeList';
 import PerfumeDetail from './components/perfumes/PerfumeDetail';
@@ -47,6 +50,9 @@ function AppRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
           <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
+          <Route path="/verify" element={<VerifyCode />} />
+          <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
+          <Route path="/reset-password/:token" element={<GuestRoute><ResetPassword /></GuestRoute>} />
           <Route path="/auth/google/callback" element={<GoogleCallback />} />
           <Route path="/perfumes" element={<PerfumeList />} />
           <Route path="/perfumes/:id" element={<PerfumeDetail />} />

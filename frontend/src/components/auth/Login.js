@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { loginUser } from '../../services/perfumeService';
 import { toast } from 'react-toastify';
 import { getGoogleOAuthUrl } from '../../services/googleAuth';
@@ -10,7 +9,6 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -19,11 +17,32 @@ const Login = () => {
 
     try {
       const { data } = await loginUser({ email, password });
-      login(data.token, data.user);
+
+      if (data.needsVerification) {
+        // Account not verified yet — go to verification screen
+        toast.info('Please verify your email first');
+        navigate('/verify', { state: { email: data.email, type: 'verification' } });
+        return;
+      }
+
+      if (data.needsLoginCode) {
+        // Login code sent — go to code entry screen
+        toast.info('Verification code sent to your email');
+        navigate('/verify', { state: { email: data.email, type: 'login' } });
+        return;
+      }
+
+      // Fallback direct login (shouldn't happen in normal flow)
       toast.success('Login successful!');
       navigate('/');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      const errData = error.response?.data;
+      if (errData?.needsVerification) {
+        toast.info('Please verify your email first');
+        navigate('/verify', { state: { email: errData.email, type: 'verification' } });
+        return;
+      }
+      toast.error(errData?.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -63,6 +82,9 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+          </div>
+          <div className="forgot-password-link">
+            <Link to="/forgot-password">Forgot password?</Link>
           </div>
           <button type="submit" className="btn btn-primary btn-lg auth-btn" disabled={loading}>
             {loading ? 'Signing In...' : 'Sign In'}

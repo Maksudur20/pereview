@@ -3,6 +3,11 @@ import API from './api';
 // Auth
 export const registerUser = (data) => API.post('/auth/register', data);
 export const loginUser = (data) => API.post('/auth/login', data);
+export const verifyEmail = (data) => API.post('/auth/verify-email', data);
+export const verifyLoginCode = (data) => API.post('/auth/verify-login', data);
+export const resendCode = (data) => API.post('/auth/resend-code', data);
+export const forgotPassword = (data) => API.post('/auth/forgot-password', data);
+export const resetPassword = (token, data) => API.post(`/auth/reset-password/${token}`, data);
 export const googleLogin = (accessToken) => API.post('/auth/google', { accessToken });
 export const getMe = () => API.get('/auth/me');
 export const updateProfile = (data) => API.put('/auth/me', data);

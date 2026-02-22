@@ -21,7 +21,21 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Connect to MongoDB
-connectDB();
+connectDB().then(async () => {
+  // One-time: mark existing users as verified (migration for pre-verification users)
+  try {
+    const User = require('./models/User');
+    const result = await User.updateMany(
+      { isVerified: { $ne: true }, $or: [{ googleId: { $exists: true, $ne: null } }, { role: 'admin' }] },
+      { $set: { isVerified: true } }
+    );
+    if (result.modifiedCount > 0) {
+      console.log(`Auto-verified ${result.modifiedCount} existing user(s)`);
+    }
+  } catch (err) {
+    console.error('Migration error:', err.message);
+  }
+});
 
 // Security middleware
 app.use(helmet());

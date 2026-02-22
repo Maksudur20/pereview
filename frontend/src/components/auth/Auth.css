@@ -117,3 +117,138 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Verification Code Inputs */
+.verify-icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+.code-inputs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0 25px;
+}
+
+.code-input {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  border: 2px solid var(--border, #e0e0e0);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fafafa;
+  color: #333;
+}
+
+.code-input:focus {
+  border-color: var(--primary, #d63384);
+  box-shadow: 0 0 0 3px rgba(214, 51, 132, 0.15);
+  background: #fff;
+}
+
+.code-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Resend Code Section */
+.resend-section {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.resend-section p {
+  color: var(--text-secondary, #888);
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+}
+
+.resend-btn {
+  background: none;
+  border: none;
+  color: var(--primary, #d63384);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: opacity 0.2s;
+}
+
+.resend-btn:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.resend-btn:disabled {
+  color: var(--text-light, #aaa);
+  cursor: default;
+}
+
+/* Go Back Link Button */
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--primary, #d63384);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+/* Forgot Password Link */
+.forgot-password-link {
+  text-align: right;
+  margin: -4px 0 12px;
+}
+
+.forgot-password-link a {
+  color: var(--primary, #d63384);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.forgot-password-link a:hover {
+  text-decoration: underline;
+}
+
+/* Reset Instructions */
+.reset-instructions {
+  text-align: center;
+  margin: 15px 0 25px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.reset-instructions p {
+  color: var(--text-secondary, #555);
+  font-size: 0.88rem;
+  margin-bottom: 6px;
+}
+
+.reset-instructions .text-muted {
+  color: var(--text-light, #aaa);
+  font-size: 0.8rem;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .code-input {
+    width: 42px;
+    height: 50px;
+    font-size: 1.3rem;
+  }
+
+  .code-inputs {
+    gap: 6px;
+  }
+}
