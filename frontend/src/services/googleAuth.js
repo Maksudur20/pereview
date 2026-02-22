@@ -1,4 +1,4 @@
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '490991354262-k5hp4kgr576nldk65bpkoqh8u6i68j1k.apps.googleusercontent.com';
 const REDIRECT_URI = `${window.location.origin}/auth/google/callback`;
 
 export const getGoogleOAuthUrl = () => {
