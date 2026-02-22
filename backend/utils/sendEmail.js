@@ -1,5 +1,9 @@
 const nodemailer = require('nodemailer');
 
+const isEmailConfigured = () => {
+  return !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+};
+
 const createTransporter = () => {
   return nodemailer.createTransport({
     service: 'gmail',
@@ -11,6 +15,11 @@ const createTransporter = () => {
 };
 
 const sendVerificationEmail = async (email, name, code) => {
+  if (!isEmailConfigured()) {
+    console.log(`[EMAIL NOT CONFIGURED] Verification code for ${email}: ${code}`);
+    return;
+  }
+
   const transporter = createTransporter();
 
   const mailOptions = {
@@ -38,10 +47,20 @@ const sendVerificationEmail = async (email, name, code) => {
     `,
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (err) {
+    console.error(`[EMAIL ERROR] Failed to send verification email to ${email}:`, err.message);
+    console.log(`[FALLBACK] Verification code for ${email}: ${code}`);
+  }
 };
 
 const sendLoginCodeEmail = async (email, name, code) => {
+  if (!isEmailConfigured()) {
+    console.log(`[EMAIL NOT CONFIGURED] Login code for ${email}: ${code}`);
+    return;
+  }
+
   const transporter = createTransporter();
 
   const mailOptions = {
@@ -69,10 +88,20 @@ const sendLoginCodeEmail = async (email, name, code) => {
     `,
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (err) {
+    console.error(`[EMAIL ERROR] Failed to send login code to ${email}:`, err.message);
+    console.log(`[FALLBACK] Login code for ${email}: ${code}`);
+  }
 };
 
 const sendPasswordResetEmail = async (email, name, resetUrl) => {
+  if (!isEmailConfigured()) {
+    console.log(`[EMAIL NOT CONFIGURED] Password reset URL for ${email}: ${resetUrl}`);
+    return;
+  }
+
   const transporter = createTransporter();
 
   const mailOptions = {
@@ -102,7 +131,12 @@ const sendPasswordResetEmail = async (email, name, resetUrl) => {
     `,
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (err) {
+    console.error(`[EMAIL ERROR] Failed to send reset email to ${email}:`, err.message);
+    console.log(`[FALLBACK] Reset URL for ${email}: ${resetUrl}`);
+  }
 };
 
 module.exports = { sendVerificationEmail, sendLoginCodeEmail, sendPasswordResetEmail };

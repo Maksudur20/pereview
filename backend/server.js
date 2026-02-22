@@ -22,11 +22,11 @@ app.set('trust proxy', 1);
 
 // Connect to MongoDB
 connectDB().then(async () => {
-  // One-time: mark existing users as verified (migration for pre-verification users)
+  // One-time: mark ALL existing users as verified (they registered before verification was added)
   try {
     const User = require('./models/User');
     const result = await User.updateMany(
-      { isVerified: { $ne: true }, $or: [{ googleId: { $exists: true, $ne: null } }, { role: 'admin' }] },
+      { isVerified: { $ne: true } },
       { $set: { isVerified: true } }
     );
     if (result.modifiedCount > 0) {
