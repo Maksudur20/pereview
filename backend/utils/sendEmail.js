@@ -177,4 +177,45 @@ const sendPasswordResetEmail = async (email, name, resetUrl) => {
   }
 };
 
-module.exports = { sendVerificationEmail, sendLoginCodeEmail, sendPasswordResetEmail, sendRawEmail };
+const sendWelcomeEmail = async (email, name) => {
+  if (!isEmailConfigured()) {
+    console.log(`[EMAIL NOT CONFIGURED] Welcome email for ${email}`);
+    return;
+  }
+
+  const html = `
+    <div style="max-width: 500px; margin: 0 auto; padding: 30px; font-family: 'Segoe UI', Arial, sans-serif; background: #fff; border-radius: 12px; border: 1px solid #eee;">
+      <div style="text-align: center; margin-bottom: 25px;">
+        <h1 style="color: #d63384; margin: 0; font-size: 28px;">✨ PeReview</h1>
+        <p style="color: #888; margin-top: 5px;">Perfume Review & Discovery</p>
+      </div>
+      <h2 style="color: #333; text-align: center;">Welcome to PeReview!</h2>
+      <p style="color: #555; font-size: 15px;">Hi <strong>${name}</strong>,</p>
+      <p style="color: #555; font-size: 15px;">Thank you for joining PeReview! We're thrilled to have you as part of our fragrance community.</p>
+      <p style="color: #555; font-size: 15px;">Here's what you can do:</p>
+      <ul style="color: #555; font-size: 15px; line-height: 1.8;">
+        <li>🔍 Discover new perfumes</li>
+        <li>⭐ Write and read reviews</li>
+        <li>💬 Join discussions with fragrance enthusiasts</li>
+        <li>❤️ Save your favorite perfumes</li>
+        <li>🎯 Get personalized recommendations</li>
+      </ul>
+      <div style="text-align: center; margin: 25px 0;">
+        <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}" style="display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #d63384, #e91e8c); color: white; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 8px;">
+          Start Exploring
+        </a>
+      </div>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="color: #aaa; font-size: 12px; text-align: center;">Happy fragrance hunting! 🌸</p>
+    </div>
+  `;
+
+  try {
+    await sendRawEmail(email, 'Welcome to PeReview! 🌸', html);
+    console.log(`[EMAIL] Welcome email sent to ${email}`);
+  } catch (err) {
+    console.error(`[EMAIL ERROR] Failed to send welcome email to ${email}:`, err.message);
+  }
+};
+
+module.exports = { sendVerificationEmail, sendLoginCodeEmail, sendPasswordResetEmail, sendWelcomeEmail, sendRawEmail };

@@ -13,15 +13,25 @@ const GoogleCallback = () => {
   useEffect(() => {
     const handleCallback = () => {
       try {
-        const token = searchParams.get('token');
-        const userParam = searchParams.get('user');
         const error = searchParams.get('error');
+        const needsLoginCode = searchParams.get('needsLoginCode');
+        const email = searchParams.get('email');
 
         if (error) {
           toast.error('Google login failed. Please try again.');
           navigate('/login');
           return;
         }
+
+        // Google login now requires verification code
+        if (needsLoginCode && email) {
+          toast.info('Verification code sent to your email');
+          navigate('/verify', { state: { email, type: 'login' } });
+          return;
+        }
+
+        const token = searchParams.get('token');
+        const userParam = searchParams.get('user');
 
         if (!token || !userParam) {
           toast.error('Google login failed - no token received');

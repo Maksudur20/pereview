@@ -3,7 +3,7 @@ const generateToken = require('../utils/generateToken');
 const { OAuth2Client } = require('google-auth-library');
 const https = require('https');
 const crypto = require('crypto');
-const { sendVerificationEmail, sendLoginCodeEmail, sendPasswordResetEmail } = require('../utils/sendEmail');
+const { sendVerificationEmail, sendLoginCodeEmail, sendPasswordResetEmail, sendWelcomeEmail } = require('../utils/sendEmail');
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -80,6 +80,9 @@ const verifyEmail = async (req, res, next) => {
     user.verificationCode = undefined;
     user.verificationCodeExpires = undefined;
     await user.save();
+
+    // Send welcome email to newly verified users
+    sendWelcomeEmail(email, user.name).catch(err => console.error('[EMAIL] Welcome email error:', err.message));
 
     const token = generateToken(user._id);
 
@@ -334,6 +337,7 @@ const googleCallback = async (req, res) => {
     const picture = payload.picture || '';
 
     let user = await User.findOne({ $or: [{ googleId }, { email }] });
+    let isNewUser = false;
 
     if (user) {
       if (!user.googleId) {
@@ -343,6 +347,7 @@ const googleCallback = async (req, res) => {
       if (!user.isVerified) user.isVerified = true;
       await user.save();
     } else {
+      isNewUser = true;
       user = await User.create({
         name,
         email,
@@ -350,20 +355,17 @@ const googleCallback = async (req, res) => {
         avatar: picture || '',
         isVerified: true,
       });
+      // Send welcome email to new users
+      sendWelcomeEmail(email, name).catch(err => console.error('[EMAIL] Welcome email error:', err.message));
     }
 
-    const token = generateToken(user._id);
-    
-    // Redirect to frontend with token and user data
-    const userData = encodeURIComponent(JSON.stringify({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      avatar: user.avatar,
-    }));
-    
-    res.redirect(`${FRONTEND_URL}/auth/google/callback?token=${token}&user=${userData}`);
+    // Send login verification code (same as email/password login)
+    const loginCode = user.generateLoginCode();
+    await user.save();
+    sendLoginCodeEmail(email, user.name, loginCode).catch(err => console.error('[EMAIL] Google login code error:', err.message));
+
+    // Redirect to frontend with needsLoginCode flag
+    res.redirect(`${FRONTEND_URL}/auth/google/callback?needsLoginCode=true&email=${encodeURIComponent(email)}`);
   } catch (error) {
     console.error('Google OAuth callback error:', error);
     res.redirect(`${FRONTEND_URL}/login?error=google_auth_failed`);
@@ -420,6 +422,7 @@ const googleAuth = async (req, res, next) => {
     }
 
     let user = await User.findOne({ $or: [{ googleId }, { email }] });
+    let isNewUser = false;
 
     if (user) {
       // Update Google ID if user exists but logged in via email before
@@ -430,6 +433,7 @@ const googleAuth = async (req, res, next) => {
       if (!user.isVerified) user.isVerified = true;
       await user.save();
     } else {
+      isNewUser = true;
       user = await User.create({
         name,
         email,
@@ -437,20 +441,20 @@ const googleAuth = async (req, res, next) => {
         avatar: picture || '',
         isVerified: true,
       });
+      // Send welcome email to new users
+      sendWelcomeEmail(email, name).catch(err => console.error('[EMAIL] Welcome email error:', err.message));
     }
 
-    const token = generateToken(user._id);
+    // Send login verification code (same as email/password login)
+    const loginCode = user.generateLoginCode();
+    await user.save();
+    sendLoginCodeEmail(email, user.name, loginCode).catch(err => console.error('[EMAIL] Google login code error:', err.message));
 
     res.json({
       success: true,
-      token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar,
-      },
+      needsLoginCode: true,
+      email: user.email,
+      message: 'Login code sent to your email',
     });
   } catch (error) {
     next(error);
