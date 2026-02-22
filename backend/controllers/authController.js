@@ -85,8 +85,7 @@ const login = async (req, res, next) => {
 // @desc    Redirect user to Google OAuth consent screen
 // @route   GET /api/auth/google/redirect
 const googleRedirect = (req, res) => {
-  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-  const redirectUri = `${protocol}://${req.get('host')}/api/auth/google/callback`;
+  const redirectUri = `https://${req.get('host')}/api/auth/google/callback`;
   const url = googleClient.generateAuthUrl({
     access_type: 'offline',
     scope: ['openid', 'email', 'profile'],
@@ -105,8 +104,7 @@ const googleCallback = async (req, res) => {
       return res.redirect(`${FRONTEND_URL}/login?error=no_code`);
     }
 
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const redirectUri = `${protocol}://${req.get('host')}/api/auth/google/callback`;
+    const redirectUri = `https://${req.get('host')}/api/auth/google/callback`;
     const { tokens } = await googleClient.getToken({ code, redirect_uri: redirectUri });
     
     // Get user info from the ID token

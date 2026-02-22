@@ -17,6 +17,9 @@ const recommendationRoutes = require('./routes/recommendationRoutes');
 
 const app = express();
 
+// Trust proxy (Render, Heroku, etc.)
+app.set('trust proxy', 1);
+
 // Connect to MongoDB
 connectDB();
 
