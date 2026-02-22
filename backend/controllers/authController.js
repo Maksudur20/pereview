@@ -40,7 +40,8 @@ const register = async (req, res, next) => {
     const code = user.generateVerificationCode();
     await user.save();
 
-    await sendVerificationEmail(email, name, code);
+    // Fire-and-forget: don't await email so the response is sent immediately
+    sendVerificationEmail(email, name, code).catch(err => console.error('[EMAIL] Register verification error:', err.message));
 
     res.status(201).json({
       success: true,
@@ -116,11 +117,13 @@ const resendCode = async (req, res, next) => {
     if (type === 'login') {
       const code = user.generateLoginCode();
       await user.save();
-      await sendLoginCodeEmail(email, user.name, code);
+      // Fire-and-forget
+      sendLoginCodeEmail(email, user.name, code).catch(err => console.error('[EMAIL] Resend login code error:', err.message));
     } else {
       const code = user.generateVerificationCode();
       await user.save();
-      await sendVerificationEmail(email, user.name, code);
+      // Fire-and-forget
+      sendVerificationEmail(email, user.name, code).catch(err => console.error('[EMAIL] Resend verification error:', err.message));
     }
 
     res.json({ success: true, message: 'Code resent successfully' });
@@ -154,7 +157,8 @@ const login = async (req, res, next) => {
       // Resend verification code
       const code = user.generateVerificationCode();
       await user.save();
-      await sendVerificationEmail(email, user.name, code);
+      // Fire-and-forget
+      sendVerificationEmail(email, user.name, code).catch(err => console.error('[EMAIL] Login verification error:', err.message));
       return res.status(403).json({
         success: false,
         needsVerification: true,
@@ -166,7 +170,8 @@ const login = async (req, res, next) => {
     // Send login verification code
     const code = user.generateLoginCode();
     await user.save();
-    await sendLoginCodeEmail(email, user.name, code);
+    // Fire-and-forget
+    sendLoginCodeEmail(email, user.name, code).catch(err => console.error('[EMAIL] Login code error:', err.message));
 
     res.json({
       success: true,
@@ -244,7 +249,8 @@ const forgotPassword = async (req, res, next) => {
     await user.save();
 
     const resetUrl = `${FRONTEND_URL}/reset-password/${resetToken}`;
-    await sendPasswordResetEmail(email, user.name, resetUrl);
+    // Fire-and-forget
+    sendPasswordResetEmail(email, user.name, resetUrl).catch(err => console.error('[EMAIL] Reset email error:', err.message));
 
     res.json({ success: true, message: 'Password reset link sent to your email' });
   } catch (error) {
