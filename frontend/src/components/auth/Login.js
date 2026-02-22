@@ -32,18 +32,24 @@ const Login = () => {
 
   const handleGoogleSuccess = async (tokenResponse) => {
     try {
+      console.log('Google token received:', tokenResponse);
       const { data } = await googleLoginApi(tokenResponse.access_token);
       login(data.token, data.user);
       toast.success('Login successful!');
       navigate('/');
     } catch (error) {
-      toast.error('Google login failed');
+      console.error('Google login API error:', error.response?.data || error.message);
+      toast.error(error.response?.data?.message || 'Google login failed');
     }
   };
 
   const googleLogin = useGoogleLogin({
     onSuccess: handleGoogleSuccess,
-    onError: () => toast.error('Google login failed'),
+    onError: (error) => {
+      console.error('Google OAuth error:', error);
+      toast.error('Google login failed. Please try again.');
+    },
+    flow: 'implicit',
   });
 
   return (

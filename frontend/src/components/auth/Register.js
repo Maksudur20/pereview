@@ -42,18 +42,24 @@ const Register = () => {
 
   const handleGoogleSuccess = async (tokenResponse) => {
     try {
+      console.log('Google token received:', tokenResponse);
       const { data } = await googleLoginApi(tokenResponse.access_token);
       login(data.token, data.user);
       toast.success('Account created successfully!');
       navigate('/');
     } catch (error) {
-      toast.error('Google signup failed');
+      console.error('Google signup API error:', error.response?.data || error.message);
+      toast.error(error.response?.data?.message || 'Google signup failed');
     }
   };
 
   const googleLogin = useGoogleLogin({
     onSuccess: handleGoogleSuccess,
-    onError: () => toast.error('Google signup failed'),
+    onError: (error) => {
+      console.error('Google OAuth error:', error);
+      toast.error('Google signup failed. Please try again.');
+    },
+    flow: 'implicit',
   });
 
   return (
