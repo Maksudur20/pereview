@@ -84,36 +84,31 @@ app.use('/api', recommendationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', version: 'v3-email-diag', timestamp: new Date().toISOString() });
+  res.json({ status: 'OK', version: 'v4-gmail-api', timestamp: new Date().toISOString() });
 });
 
 // Email diagnostic (temporary — remove after debugging)
 app.get('/api/test-email', async (req, res) => {
   try {
-    const nodemailer = require('nodemailer');
+    const { sendRawEmail } = require('./utils/sendEmail');
     const emailUser = process.env.EMAIL_USER;
-    const emailPass = process.env.EMAIL_PASS;
+    const hasRefreshToken = !!process.env.GOOGLE_REFRESH_TOKEN;
+    const hasClientId = !!process.env.GOOGLE_CLIENT_ID;
+    const hasClientSecret = !!process.env.GOOGLE_CLIENT_SECRET;
 
-    if (!emailUser || !emailPass) {
-      return res.json({ success: false, error: 'EMAIL_USER or EMAIL_PASS not set', emailUser: !!emailUser, emailPass: !!emailPass });
+    if (!emailUser || !hasRefreshToken || !hasClientId || !hasClientSecret) {
+      return res.json({
+        success: false,
+        error: 'Missing Gmail API config',
+        emailUser: !!emailUser,
+        hasClientId,
+        hasClientSecret,
+        hasRefreshToken,
+      });
     }
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: emailUser, pass: emailPass },
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 15000,
-    });
-
-    const info = await transporter.sendMail({
-      from: `"PeReview" <${emailUser}>`,
-      to: emailUser,
-      subject: 'PeReview Email Test',
-      html: '<h1>Email works from Render!</h1>',
-    });
-
-    res.json({ success: true, response: info.response, emailUser: emailUser });
+    await sendRawEmail(emailUser, 'PeReview Email Test', '<h1>Email works from Render via Gmail API!</h1>');
+    res.json({ success: true, method: 'Gmail REST API', emailUser });
   } catch (err) {
     res.json({ success: false, error: err.message, code: err.code });
   }
