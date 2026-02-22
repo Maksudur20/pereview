@@ -84,7 +84,7 @@ app.use('/api', recommendationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({ status: 'OK', version: 'v2-fireandforget', timestamp: new Date().toISOString() });
 });
 
 // 404 handler
