@@ -84,7 +84,39 @@ app.use('/api', recommendationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', version: 'v2-fireandforget', timestamp: new Date().toISOString() });
+  res.json({ status: 'OK', version: 'v3-email-diag', timestamp: new Date().toISOString() });
+});
+
+// Email diagnostic (temporary — remove after debugging)
+app.get('/api/test-email', async (req, res) => {
+  try {
+    const nodemailer = require('nodemailer');
+    const emailUser = process.env.EMAIL_USER;
+    const emailPass = process.env.EMAIL_PASS;
+
+    if (!emailUser || !emailPass) {
+      return res.json({ success: false, error: 'EMAIL_USER or EMAIL_PASS not set', emailUser: !!emailUser, emailPass: !!emailPass });
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: emailUser, pass: emailPass },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 15000,
+    });
+
+    const info = await transporter.sendMail({
+      from: `"PeReview" <${emailUser}>`,
+      to: emailUser,
+      subject: 'PeReview Email Test',
+      html: '<h1>Email works from Render!</h1>',
+    });
+
+    res.json({ success: true, response: info.response, emailUser: emailUser });
+  } catch (err) {
+    res.json({ success: false, error: err.message, code: err.code });
+  }
 });
 
 // 404 handler
